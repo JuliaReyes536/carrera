@@ -1,0 +1,1 @@
+export default { content: ['./index.html', './src/**/*.{ts,tsx}'], theme: { extend: { colors: { neon: '#47f5e6', magenta: '#f65acb', acid: '#bdff61' }, fontFamily: { display: ['Orbitron', 'monospace'], sans: ['Rajdhani', 'sans-serif'] } } }, plugins: [] };
