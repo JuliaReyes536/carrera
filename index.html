@@ -4,19 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Carrera de la Muerte – Control de pilotos</title>
-<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============ TOKENS DE DISEÑO ============ */
 :root{
-  --asphalt:#141211; --road:#1f1c1a; --plate:#2a2623; --line:#3d3631;
-  --bone:#e9e0d2; --dust:#a39a8d;
-  --blood:#e0201b; --rust:#d2691e; --toxic:#d9f21b; --gold:#ffc83d;
-  --display:'Black Ops One',Impact,'Arial Black',sans-serif;
-  --body:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --asphalt:#080912; --road:#101323; --plate:#171b2e; --line:#303856;
+  --bone:#e4f4ff; --dust:#8da3c7;
+  --blood:#ff347e; --rust:#00e5ff; --toxic:#b7ff3c; --gold:#ffe45c;
+  --display:'Orbitron',Impact,'Arial Black',sans-serif;
+  --body:'Rajdhani','Arial Narrow',Impact,sans-serif;
 }
 *{box-sizing:border-box;margin:0}
 body{
   background:
+    radial-gradient(ellipse at 50% 0%,rgba(0,229,255,.1),transparent 55%),
     repeating-linear-gradient(135deg,transparent 0 22px,rgba(255,255,255,.015) 22px 23px),
     var(--asphalt);
   color:var(--bone);font-family:var(--body);font-size:1.15rem;line-height:1.3;min-height:100vh;
@@ -26,12 +27,10 @@ button,input{font:inherit;color:inherit}
 .wrap{max-width:1100px;margin:0 auto;padding:1rem}
 
 /* ============ ENCABEZADO + CRONÓMETRO ============ */
-header{border-bottom:6px solid var(--rust);background:var(--road);
-  background-image:repeating-linear-gradient(-45deg,var(--toxic) 0 14px,#000 14px 28px);
-  background-size:100% 8px;background-repeat:no-repeat;background-position:top}
+header{border-bottom:2px solid var(--rust);background:var(--road);box-shadow:0 5px 30px rgba(0,229,255,.12)}
 header .wrap{padding-top:1.6rem;display:grid;gap:1rem;grid-template-columns:1fr auto;align-items:center}
 h1{font-family:var(--display);font-size:clamp(2rem,6vw,3.6rem);line-height:.95;color:var(--rust);
-  text-shadow:3px 3px 0 #000}
+  text-shadow:0 0 20px rgba(0,229,255,.48)}
 h1 small{display:block;font-family:var(--body);font-size:1.1rem;color:var(--dust);text-shadow:none;font-weight:500;margin-top:.4rem}
 .clock{background:#000;border:3px solid var(--line);padding:.5rem 1rem;text-align:center;min-width:290px}
 .clock output{display:block;font-family:var(--display);font-size:clamp(2.2rem,7vw,3.2rem);color:var(--toxic);
@@ -64,7 +63,7 @@ h1 small{display:block;font-family:var(--body);font-size:1.1rem;color:var(--dust
 
 /* ============ FORMULARIO ============ */
 form{background:var(--road);border:2px solid var(--line);border-left:8px solid var(--rust);
-  padding:1rem;display:grid;gap:.8rem;grid-template-columns:repeat(4,1fr) auto;align-items:end;margin-bottom:1.4rem}
+  padding:1rem;display:grid;gap:.8rem;grid-template-columns:repeat(3,1fr) auto;align-items:end;margin-bottom:1.4rem}
 form h2{grid-column:1/-1;font-family:var(--display);font-weight:400;font-size:1.5rem;color:var(--gold)}
 label{display:grid;gap:.2rem;color:var(--dust)}
 input{background:#000;border:2px solid var(--line);padding:.5rem .6rem;width:100%;border-radius:0}
@@ -79,13 +78,28 @@ input:focus{border-color:var(--toxic);outline:none}
 .card .num{position:absolute;right:.6rem;top:-.3rem;font-family:var(--display);font-size:3.4rem;color:rgba(255,255,255,.07)}
 .card h3{font-size:1.5rem;line-height:1}
 .card .alias{color:var(--rust);font-weight:700}
-.card .veh{color:var(--dust)}
+.card .number{color:var(--dust)}
 .badge{justify-self:start;font-weight:700;padding:.1rem .6rem;background:#000;border:2px solid currentColor}
 .states{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem}
 .states button{padding:.4rem 0;font-size:1.3rem;border:2px solid var(--line);background:#000;cursor:pointer}
 .states button:hover{border-color:var(--bone)}
 .states button.on{background:var(--bone);border-color:var(--bone)}
 .tools{display:flex;gap:.4rem}.tools .btn{flex:1;font-size:1rem;padding:.25rem}
+.laps{border-top:1px solid var(--line);padding-top:.5rem;color:var(--dust);font-size:1rem}
+.laps h4{font-size:1rem;color:var(--rust);margin-bottom:.25rem}
+.laps ol{padding-left:1.4rem;max-height:7rem;overflow:auto;font-variant-numeric:tabular-nums}
+.laps li{padding:.08rem 0}.laps time{color:var(--bone);font-family:var(--display);font-size:.83rem}
+.track-panel{background:var(--road);border:2px solid var(--line);padding:1rem;margin-bottom:1.4rem;overflow:hidden}
+.track-panel h2{font-family:var(--display);font-size:1.3rem;color:var(--rust);margin-bottom:.25rem}
+.track-panel p{color:var(--dust);font-size:1rem;margin-bottom:.5rem}
+.track{display:block;width:100%;min-width:500px;height:auto;max-height:300px}
+.track-wrap{overflow-x:auto;border:1px solid var(--line);background:radial-gradient(ellipse,#17243a,#080912 70%)}
+.track-base{fill:none;stroke:#26314c;stroke-width:68}
+.track-edge{fill:none;stroke:#00e5ff;stroke-width:2;stroke-dasharray:8 8;opacity:.7}
+.track-center{fill:none;stroke:#7181a3;stroke-width:2;stroke-dasharray:12 12;opacity:.55}
+.track-marker{stroke:#080912;stroke-width:3;filter:drop-shadow(0 0 7px currentColor)}
+.track-label{fill:var(--bone);font:700 13px var(--body);paint-order:stroke;stroke:#080912;stroke-width:3px;stroke-linejoin:round}
+.track-start{stroke:#fff;stroke-width:4;stroke-dasharray:5 4}
 
 /* Colores por estado */
 .card.activo{border-top-color:var(--toxic)} .card.activo .badge{color:var(--toxic)}
@@ -142,7 +156,6 @@ input:focus{border-color:var(--toxic);outline:none}
     <h2 id="formTitle">Registrar piloto</h2>
     <label>Nombre del piloto<input id="fName" maxlength="40" required></label>
     <label>Alias<input id="fAlias" maxlength="30" required></label>
-    <label>Tipo de vehículo<input id="fVeh" maxlength="40" required></label>
     <label>Número de corredor<input id="fNum" type="number" min="0" max="999" required></label>
     <div class="formbtns">
       <button class="btn go" type="submit" id="fSubmit">Registrar</button>
@@ -151,6 +164,21 @@ input:focus{border-color:var(--toxic);outline:none}
     <p id="err" role="alert"></p>
   </form>
 
+  <section class="track-panel" aria-labelledby="trackTitle">
+    <h2 id="trackTitle">Ruta de carrera · Simulación</h2>
+    <p>Posiciones estimadas según el cronómetro; no es seguimiento GPS. Inicia el reloj para mover a los corredores.</p>
+    <div class="track-wrap">
+      <svg class="track" viewBox="0 0 800 300" role="img" aria-label="Mapa ovalado con posiciones simuladas de los corredores">
+        <path id="trackPath" class="track-base" d="M 190 65 H 610 A 85 85 0 0 1 610 235 H 190 A 85 85 0 0 1 190 65 Z"/>
+        <path class="track-edge" d="M 190 65 H 610 A 85 85 0 0 1 610 235 H 190 A 85 85 0 0 1 190 65 Z" transform="translate(0,-35)"/>
+        <path class="track-edge" d="M 190 65 H 610 A 85 85 0 0 1 610 235 H 190 A 85 85 0 0 1 190 65 Z" transform="translate(0,35)"/>
+        <path class="track-center" d="M 190 65 H 610 A 85 85 0 0 1 610 235 H 190 A 85 85 0 0 1 190 65 Z"/>
+        <path class="track-start" d="M 190 25 V 105"/>
+        <g id="trackMarkers"></g>
+      </svg>
+    </div>
+  </section>
+
   <!-- Panel de control -->
   <section class="grid" id="grid" aria-label="Pilotos"></section>
 </main>
@@ -158,7 +186,7 @@ input:focus{border-color:var(--toxic);outline:none}
 <script>
 "use strict";
 /* ============ ESTADO + PERSISTENCIA (LocalStorage) ============ */
-const KEY_RACERS = "cdm_racers", KEY_CLOCK = "cdm_clock";
+const KEY_RACERS = "cdm_racers", KEY_CLOCK = "cdm_clock", KEY_LAPS = "cdm_laps";
 const STATES = {
   activo:     {icon:"🟢", label:"Activo / En carrera"},
   eliminado:  {icon:"🔴", label:"Eliminado / Destruido"},
@@ -168,8 +196,9 @@ const STATES = {
 const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-let racers = load(KEY_RACERS, []);               // [{id,name,alias,vehicle,number,status}]
+let racers = load(KEY_RACERS, []);               // [{id,name,alias,number,status}]
 let clock  = load(KEY_CLOCK, {elapsed:0, startedAt:null}); // startedAt guardado => sigue corriendo al recargar
+let laps = load(KEY_LAPS, {}); // Historial por piloto, guardado junto con el cronómetro local
 let editingId = null, lastDead = null;
 
 const $ = id => document.getElementById(id);
@@ -179,6 +208,9 @@ const persist = () => save(KEY_RACERS, racers);
 
 /* ============ RENDER: estadísticas + tarjetas ============ */
 function render(){
+  // Orden estable por prioridad de carrera; conserva el orden de alta dentro de cada estado.
+  const priority = {activo:0, penalizado:1, ganador:2, eliminado:3};
+  const ordered = racers.map((r,i)=>({r,i})).sort((a,b)=>(priority[a.r.status]??4)-(priority[b.r.status]??4)||a.i-b.i).map(x=>x.r);
   const dead = racers.filter(r => r.status === "eliminado").length;
   $("sTotal").textContent  = racers.length;
   $("sActive").textContent = racers.filter(r => r.status === "activo").length;
@@ -189,13 +221,17 @@ function render(){
   }
   lastDead = dead;
 
-  $("grid").innerHTML = racers.length ? racers.map(r => `
+  $("grid").innerHTML = racers.length ? ordered.map(r => `
     <article class="card ${r.status}" data-id="${r.id}">
       <span class="num">#${esc(r.number)}</span>
       <h3>${esc(r.name)}</h3>
       <div class="alias">«${esc(r.alias)}»</div>
-      <div class="veh">🚗 ${esc(r.vehicle)} · Corredor #${esc(r.number)}</div>
+      <div class="number">Corredor #${esc(r.number)}</div>
       <span class="badge">${STATES[r.status].label}</span>
+      <button class="btn go" data-act="lap" aria-label="Registrar vuelta de ${esc(r.name)}">Registrar Vuelta</button>
+      <section class="laps" aria-label="Historial de vueltas"><h4>Vueltas (${(laps[r.id]||[]).length})</h4>
+        ${(laps[r.id]||[]).length ? `<ol>${(laps[r.id]||[]).map((lap,i)=>`<li>Vuelta ${i+1} · <time>${formatTime(lap.elapsed)}</time></li>`).join("")}</ol>` : `<span>Sin vueltas registradas</span>`}
+      </section>
       <div class="states" role="group" aria-label="Cambiar estado">
         ${Object.entries(STATES).map(([k,s]) =>
           `<button data-act="state" data-state="${k}" title="${s.label}" aria-label="${s.label}"
@@ -207,6 +243,34 @@ function render(){
       </div>
     </article>`).join("")
     : `<p class="empty">El asfalto está vacío. Registra al primer piloto arriba.</p>`;
+  renderTrack(ordered);
+}
+
+// Construye los marcadores SVG; su posición se actualiza en cada pulso del cronómetro.
+function renderTrack(ordered){
+  const layer=$("trackMarkers"), svgNS="http://www.w3.org/2000/svg";
+  layer.replaceChildren();
+  ordered.forEach((r,i)=>{
+    const marker=document.createElementNS(svgNS,"circle");
+    marker.setAttribute("r","9"); marker.setAttribute("class","track-marker");
+    marker.setAttribute("fill",r.status==="eliminado"?"#ff347e":r.status==="ganador"?"#ffe45c":r.status==="penalizado"?"#ff9f43":"#b7ff3c");
+    marker.dataset.id=r.id;
+    const label=document.createElementNS(svgNS,"text");
+    label.setAttribute("class","track-label"); label.dataset.id=r.id; label.textContent=`#${r.number} ${r.alias}`;
+    layer.append(marker,label);
+  });
+  paintTrack();
+}
+function paintTrack(){
+  const path=$("trackPath"), length=path.getTotalLength(), elapsed=now()/1000;
+  racers.forEach((r,i)=>{
+    const fraction=((elapsed/(38+(Number(r.number)%6)*4)+i*.13)%1+1)%1;
+    const p=path.getPointAtLength(fraction*length);
+    const marker=document.querySelector(`.track-marker[data-id="${CSS.escape(r.id)}"]`);
+    const label=document.querySelector(`.track-label[data-id="${CSS.escape(r.id)}"]`);
+    if(marker){marker.setAttribute("cx",p.x);marker.setAttribute("cy",p.y)}
+    if(label){label.setAttribute("x",p.x+12);label.setAttribute("y",p.y-12)}
+  });
 }
 
 /* ============ ACCIONES SOBRE TARJETAS (delegación de eventos) ============ */
@@ -214,6 +278,12 @@ $("grid").addEventListener("click", e => {
   const btn = e.target.closest("button[data-act]"); if (!btn) return;
   const card = btn.closest(".card"), r = racers.find(x => x.id === card.dataset.id);
   if (!r) return;
+
+  if (btn.dataset.act === "lap"){
+    const elapsed = Math.floor(now());
+    (laps[r.id] ||= []).push({elapsed, recordedAt:Date.now()});
+    save(KEY_LAPS,laps); render(); return;
+  }
 
   if (btn.dataset.act === "state"){
     const was = r.status; r.status = btn.dataset.state;
@@ -229,6 +299,7 @@ $("grid").addEventListener("click", e => {
     card.classList.add("out");                       // animación de salida
     setTimeout(() => {
       racers = racers.filter(x => x.id !== r.id);
+      delete laps[r.id]; save(KEY_LAPS,laps);
       if (editingId === r.id) resetForm();
       persist(); render();
     }, 330);
@@ -239,7 +310,7 @@ $("grid").addEventListener("click", e => {
 function startEdit(r){
   editingId = r.id;
   $("fName").value = r.name; $("fAlias").value = r.alias;
-  $("fVeh").value = r.vehicle; $("fNum").value = r.number;
+  $("fNum").value = r.number;
   $("formTitle").textContent = "Editar piloto"; $("fSubmit").textContent = "Guardar cambios";
   $("fCancel").hidden = false; $("err").textContent = "";
   $("form").scrollIntoView({behavior:"smooth", block:"center"}); $("fName").focus();
@@ -255,9 +326,9 @@ $("form").addEventListener("submit", e => {
   e.preventDefault();
   const data = {
     name: $("fName").value.trim(), alias: $("fAlias").value.trim(),
-    vehicle: $("fVeh").value.trim(), number: $("fNum").value.trim()
+    number: $("fNum").value.trim()
   };
-  if (Object.values(data).some(v => !v)) return $("err").textContent = "Completa los cuatro campos.";
+  if (Object.values(data).some(v => !v)) return $("err").textContent = "Completa los tres campos.";
   // El número de corredor debe ser único
   if (racers.some(r => r.number === data.number && r.id !== editingId))
     return $("err").textContent = `El número ${data.number} ya está en uso. Elige otro.`;
@@ -272,10 +343,14 @@ $("form").addEventListener("submit", e => {
 // así el cronómetro sigue contando aunque se cierre la pestaña.
 const now = () => clock.elapsed + (clock.startedAt ? Date.now() - clock.startedAt : 0);
 const pad = n => String(n).padStart(2, "0");
+function formatTime(t){
+  const ms=Math.max(0,Math.floor(t)), s=Math.floor(ms/1000);
+  return `${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}.${Math.floor(ms%1000/100)}`;
+}
 function paintClock(){
-  const t = now(), s = Math.floor(t / 1000);
-  $("time").textContent = `${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}.${Math.floor(t%1000/100)}`;
+  $("time").textContent = formatTime(now());
   $("clock").classList.toggle("running", !!clock.startedAt);
+  paintTrack();
 }
 $("bStart").onclick = () => { if (!clock.startedAt){ clock.startedAt = Date.now(); save(KEY_CLOCK, clock); } };
 $("bPause").onclick = () => {
