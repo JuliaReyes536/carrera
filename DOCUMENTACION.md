@@ -1,78 +1,90 @@
-# Carrera de la Muerte — Arquitectura y documentación
+# Arquitectura y API de carreras a pie
 
-## 1. Requerimientos funcionales
-- Crear, consultar, editar y eliminar pilotos con nombre, alias, vehículo y número único.
-- Cambiar el estado de un piloto: activo, penalizado, ganador o eliminado.
-- Mostrar estadísticas por estado y total de vueltas; recalcularlas después de cada modificación o eliminación.
-- Iniciar, pausar, reanudar y reiniciar un cronómetro global persistente.
-- Registrar una vuelta con el tiempo acumulado exacto del cronómetro global calculado en el servidor.
-- Consultar el historial de vueltas de cada piloto, editar sus tiempos y eliminar registros.
-- Ordenar el dashboard automáticamente: activo → penalizado → ganador → eliminado.
-- Persistir toda la información en SQLite sin LocalStorage.
-- Validar entradas y presentar errores y confirmación antes de eliminar pilotos o reiniciar el reloj.
+La aplicación organiza competencias entre personas. El catálogo principal es el de corredores; cada inscripción relaciona una persona, una competencia y un dorsal. Equipo/club y categoría describen al corredor y no son requisitos de equipamiento.
 
-## 2. Casos de uso
-### El administrador registra un piloto
-Completa nombre, alias, vehículo y número. El servidor valida los campos y la unicidad del número, guarda al piloto como activo y devuelve su identificación. El dashboard actualiza tarjetas y estadísticas. Un número duplicado devuelve un error sin modificar datos.
+## Capas
 
-### El administrador registra el tiempo de una vuelta
-Pulsa «Registrar Vuelta». El servidor comprueba que existe el piloto, consulta el reloj global y guarda su tiempo acumulado en milisegundos junto con la fecha UTC. La tarjeta actualiza su historial. El tiempo representa una marca acumulada, no la duración individual de la vuelta. Se permite registrar con el reloj pausado.
+React y TypeScript construyen la interfaz. `App.tsx` coordina las pantallas; `Forms.tsx` contiene los formularios y `Leaderboard.tsx` presenta corredores, vueltas, distancia, ritmo y tiempos. `api.ts` centraliza autenticación y descargas. Vite y Tailwind permiten desarrollo y compilación.
 
-### El sistema actualiza estadísticas al eliminar un piloto
-El administrador confirma la eliminación. Una transacción SQLite elimina al piloto y, mediante la clave foránea con eliminación en cascada, sus vueltas. El cliente vuelve a consultar los datos y recalcula totales y estados.
+Express configura HTTP en `app.js`. `v2.js` valida permisos, datos y estados, calcula la clasificación y ofrece exportaciones y SSE. `repository.js` realiza consultas parametrizadas y transacciones. `db.js` abre SQLite con claves foráneas y WAL. `running-migration.js` adapta datos de versiones anteriores sin eliminar su fuente.
 
-### El administrador cambia el estado o controla el reloj
-Un cambio de estado se valida en la API y provoca el reordenamiento automático del dashboard. Al pausar se consolida el tiempo transcurrido; al reanudar se guarda una nueva referencia temporal. Reiniciar pone a cero y pausa el reloj, conservando el historial de vueltas.
+## Modelo de datos
 
-## 3. Modelo relacional (SQLite)
-### Pilotos
-| Campo | Tipo | Restricciones |
-|---|---|---|
-| id | INTEGER | PK autoincremental |
-| nombre | TEXT | obligatorio, 1–100 caracteres |
-| alias | TEXT | obligatorio, 1–100 caracteres |
-| vehiculo | TEXT | obligatorio, 1–100 caracteres |
-| numero | INTEGER | único, entre 0 y 999 |
-| estado | TEXT | activo, penalizado, ganador o eliminado |
+| Tabla | Responsabilidad |
+| --- | --- |
+| tb_roles | Administrador y operador |
+| tb_usuarios | Nombre, correo único, rol, hash y estado |
+| tb_sesiones | Hash de token, usuario y expiración |
+| tb_corredores | Nombre completo, equipo/club, categoría y estado |
+| tb_competencias | Fecha, modalidad, reglas, distancia de vuelta y revisiones |
+| tb_inscripciones | Competencia, corredor y dorsal; corredor/dorsal únicos por competencia |
+| tb_intentos_corredores | Intentos de cronometraje separados |
+| tb_cronometros_corredores | Un cronómetro por intento |
+| tb_vueltas_corredores | Marcas, parciales, validez e identificador de solicitud |
+| tb_sanciones_corredores | Tipo, valor, motivo y responsable |
+| tb_clasificaciones_corredores | Resultados oficiales por inscripción e intento |
+| tb_auditoria | Operaciones críticas y cambios |
+| tb_configuracion | Organización, sede y temporada |
 
-### Vueltas
-| Campo | Tipo | Restricciones |
-|---|---|---|
-| id | INTEGER | PK autoincremental |
-| piloto_id | INTEGER | FK a Pilotos.id, ON DELETE CASCADE |
-| tiempo_registrado | INTEGER | milisegundos acumulados, >= 0 |
-| fecha | TEXT | fecha UTC ISO 8601 |
+Las columnas relacionales protegen identidades, relaciones, dorsales y marcas; los atributos y fotografías históricas se guardan en JSON validado. `v2_meta` registra migraciones y `v2_restore_safety` conserva copias previas a restauraciones. Las tablas antiguas pueden permanecer únicamente como evidencia; las instalaciones nuevas no las crean.
 
-### Cronometro
-| Campo | Tipo | Restricciones |
-|---|---|---|
-| id | INTEGER | PK, singleton con valor 1 |
-| tiempo_global | INTEGER | milisegundos consolidados, >= 0 |
-| estado | TEXT | corriendo o pausado |
-| iniciado_en | INTEGER | marca Unix en ms, nullable |
+## Cronometraje y clasificación
 
-Pilotos tiene una relación uno a muchos con Vueltas. Cronometro es un registro global independiente compartido por todos los pilotos. `iniciado_en` permite recuperar el reloj tras reiniciar el servidor: mientras corre, tiempo actual = tiempo_global + (ahora − iniciado_en). El tiempo continúa transcurriendo con el servidor apagado. Se usa el reloj de pared del servidor; ajustes manuales de ese reloj pueden afectar el resultado. La API entrega `tiempo_global` ya calculado y `servidor_ahora`.
+El servidor conserva milisegundos acumulados y el último inicio. Pausar acumula el intervalo, reanudar registra un nuevo inicio y reiniciar abre otro intento. El estado temporal persiste después de reiniciar el servicio. Se necesita un reloj de sistema estable.
 
-## 4. Arquitectura
-Frontend React + TypeScript + Tailwind compilado con Vite; backend Express y better-sqlite3. La API valida entradas y SQLite aplica restricciones. El cliente consulta periódicamente el reloj y proyecta el tiempo entre consultas; el POST de vueltas siempre usa el tiempo del servidor. Las mutaciones del reloj y el registro de vueltas son transacciones síncronas. Base de datos local en backend/data/carrera.sqlite, excluida de Git.
+La primera vuelta se mide desde cero; las siguientes se calculan por diferencia con la marca válida anterior. Las correcciones deben mantener marcas crecientes. Anular una vuelta conserva la evidencia y recalcula los parciales válidos posteriores. Solicitudes repetidas con el mismo identificador no generan nuevas vueltas en ese intento.
 
-## 5. API REST
-Prefijo: http://localhost:3001/api. JSON en solicitudes y respuestas.
+`distancia_m = vueltas_válidas × distancia_por_vuelta_m`. `ritmo_ms_km = tiempo_ajustado_ms × 1000 / distancia_m`. No se muestra ritmo sin vueltas o sin una longitud de vuelta conocida. El indicador usa tiempo ajustado, incluyendo sanciones.
 
-| Método | Ruta | Uso |
-|---|---|---|
-| GET | /health | disponibilidad |
-| GET / POST | /pilotos | listar / crear |
-| GET / PUT / DELETE | /pilotos/:id | consultar / editar / eliminar |
-| GET / POST | /pilotos/:id/vueltas | historial / registrar marca actual del servidor (sin cuerpo) |
-| PUT / DELETE | /vueltas/:id | editar tiempo_registrado / eliminar |
-| GET | /cronometro | tiempo actual |
-| POST | /cronometro | iniciar o reanudar (idempotente) |
-| PUT | /cronometro | {"accion":"pausar"}, {"accion":"reanudar"} o {"accion":"reiniciar"} |
+La clasificación general usa más vueltas, menor tiempo ajustado y mejor vuelta. Contrarreloj compara objetivos iguales. Eliminación requiere un único habilitado; resistencia requiere terminar el periodo. Los excluidos carecen de posición competitiva. Un empate pendiente se resuelve con autorización y motivo.
 
-Crear piloto: `{"nombre":"Ana","alias":"Neon","vehiculo":"Interceptor","numero":7}`. PUT de piloto exige los mismos campos y `estado`. Respuestas 201 en creación, 204 en eliminación, 400 en validación, 404 si no existe, 409 para número duplicado. Errores: `{"error":"mensaje"}`.
+## API
 
-## 6. Alcance y operación
-Aplicación para administración local de confianza, sin autenticación. No exponer públicamente sin añadir autenticación, autorización y HTTPS. CORS permite por defecto http://localhost:5173; configurable mediante FRONTEND_ORIGIN. Un solo proceso y archivo SQLite sirven esta instalación. Copiar la base con el servidor detenido para respaldarla. Reiniciar el cronómetro no borra vueltas; eliminar un piloto sí borra las suyas.
+Base `/api`. Los errores devuelven `{ "error": "mensaje" }`. Las operaciones protegidas requieren `Authorization: Bearer <token>`. Fechas ISO, tiempos en milisegundos y distancias en metros.
 
-Se conserva index.html como referencia histórica del original. La nueva aplicación se ejecuta desde frontend/ y no usa LocalStorage. Los registros del navegador antiguo no se importan automáticamente. Consultar README.md para instalación, pruebas y ejecución.
+| Método | Ruta | Permiso |
+| --- | --- | --- |
+| GET | /health, /auth/status | Público |
+| POST | /auth/setup | Solo antes de la primera cuenta |
+| POST | /auth/login | Público, con límite de intentos |
+| GET | /auth/me | Usuario |
+| POST | /auth/logout, /auth/password | Usuario |
+| GET, POST | /users | Administrador |
+| PATCH | /users/:id | Administrador |
+| GET, POST | /runners | Usuario |
+| GET | /runners/:id | Usuario |
+| PATCH | /runners/:id | Usuario; cambiar estado requiere administrador |
+| DELETE | /runners/:id | Administrador; baja lógica |
+| GET | /races, /races/:id | Público, sin evidencia administrativa |
+| POST | /races | Administrador |
+| PATCH | /races/:id | Administrador, antes del inicio |
+| POST | /races/:id/participants | Administrador; `runnerId` y `number` (dorsal) |
+| DELETE | /races/:id/participants/:pid | Administrador, antes del inicio; conserva inscripciones con evidencia anterior |
+| POST | /races/:id/start, /pause, /resume, /finish | Usuario |
+| POST | /races/:id/prepare, /cancel, /archive, /reset | Administrador |
+| POST | /races/:id/tie-break, /reopen | Administrador con motivo |
+| POST | /races/:id/laps | Usuario; `participantId` y `requestId` |
+| PATCH | /races/:id/laps/:lapId | Administrador; `mark` o `valid:false`, con `reason` |
+| POST | /races/:id/penalties | Usuario; tipo, valor, participante y motivo |
+| GET | /races/:id/timer, /laps, /leaderboard, /results, /stats | Público |
+| GET | /races/:id/export/csv, /export/pdf | Usuario |
+| GET | /dashboard | Usuario |
+| GET | /audit | Administrador |
+| GET, PUT | /settings | Administrador |
+| GET | /backup | Administrador |
+| POST | /restore | Administrador; respaldo y motivo |
+| GET | /events | Avisos SSE de cambios, sin datos privados |
+
+Registro de corredor: `{ "name": "Ana Martínez", "team": "Club Amanecer", "category": "Libre" }`. Equipo y categoría predeterminados: Independiente y Libre. Configurar una competencia acepta `lapDistance`, metros por vuelta, con valor inicial de 400. Las inscripciones solo requieren corredor y dorsal.
+
+## Persistencia y compatibilidad
+
+La base real es `backend/data/carrera.sqlite`. Las migraciones copian personas y competencias a las nuevas relaciones, conservando marcas y fuentes antiguas. Las distancias desconocidas permanecen nulas; la app muestra un guion para distancia y ritmo en esos casos.
+
+Los respaldos nuevos usan formato 3 y `sport: running`. La restauración admite conversión de formato 2, valida integridad, conserva una copia previa, cierra sesiones y deja pausadas las carreras que estaban corriendo. No incluye sesiones ni las tablas antiguas conservadas como evidencia.
+
+## Validación y ejecución
+
+`npm run dev` inicia interfaz/API; `npm run demo` utiliza SQLite en memoria y personas ficticias. `npm test` ejecuta integración sin tocar los datos reales. `npm run build` verifica TypeScript y crea `frontend/dist`; `npm start` sirve esa compilación y la API en 3001.
+
+La captura manual y la latencia afectan la precisión física. HTTPS, disponibilidad, carga y recuperación operativa requieren validación y configuración del entorno de publicación.

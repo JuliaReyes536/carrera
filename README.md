@@ -1,109 +1,157 @@
-# Carrera de la Muerte
+# Carrera de la Muerte — Carreras a pie
 
-Aplicación de administración de carreras con React, TypeScript, Tailwind, Vite, Express y SQLite. La arquitectura, los casos de uso, las tablas y el contrato REST están en [DOCUMENTACION.md](DOCUMENTACION.md).
+Aplicación web para organizar competencias de personas que corren. Administra corredores, dorsales, equipos, categorías, distancias, vueltas, tiempos, penalizaciones y resultados. Incluye acceso para organizadores y operadores, además de una clasificación pública.
 
-## Requisitos
-Node.js 20.19+ (o 22.12+) y npm. `better-sqlite3` usa binarios nativos; si tu plataforma no tiene uno precompilado necesitarás Python 3 y herramientas de compilación (en macOS, Xcode Command Line Tools).
+![Panel de carreras a pie con datos de demostración](docs/vista-previa-v2.jpg)
 
-## Instalación y ejecución local
-1. Abre una terminal en el proyecto:
-   ```sh
-   cd /Users/yait/Desktop/carrera
-   npm install
-   ```
-   Se instalan ambos proyectos mediante npm workspaces.
-2. Inicia el backend en esa terminal:
-   ```sh
-   npm run dev:backend
-   ```
-   API: `http://localhost:3001/api`. Las tablas y `backend/data/carrera.sqlite` se crean automáticamente.
-3. Abre otra terminal:
-   ```sh
-   cd /Users/yait/Desktop/carrera
-   npm run dev:frontend
-   ```
-4. Abre http://localhost:5173. Vite reenvía `/api` al backend. Mantén ambos procesos activos. Usa Ctrl+C para detenerlos.
+La imagen muestra una demostración con personas y competencias ficticias. La base real comienza sin datos de ejemplo.
 
-Si el puerto 5173 está ocupado, usa `npm run dev:frontend -- --port 5174` y abre http://localhost:5174. El proxy de Vite permite comunicar con la API desde ese puerto sin cambiar CORS. Si accedes directamente a la API desde otro origen, configura FRONTEND_ORIGIN.
+## Iniciar desde Visual Studio Code
 
-También puedes ejecutar desde cada carpeta: `cd backend && npm run dev` y `cd frontend && npm run dev`. Instala primero desde la raíz.
+Requisitos: Node.js 20.19+ o 22.12+ y npm. Abre una terminal en la carpeta del proyecto:
 
-## Pruebas automáticas y compilación
-Desde la raíz:
-```sh
-npm test
+```powershell
+npm install
+npm run dev
+```
+
+Entra a [la aplicación](http://127.0.0.1:5173). El comando inicia el frontend en 5173 y la API en 3001. Detén ambos con Ctrl+C. Live Server o abrir el HTML directamente no ejecuta la aplicación completa.
+
+En el primer acceso crea tu cuenta de administrador con nombre, correo y contraseña de al menos 10 caracteres, máximo 72 bytes. La instalación real no incluye contraseñas predeterminadas.
+
+## Organizar una carrera
+
+1. En **Corredores**, registra nombre completo, equipo o club y categoría. El equipo es opcional; se asigna «Independiente» si lo dejas vacío.
+2. Crea una competencia con fecha, modalidad y distancia de cada vuelta en metros. Para una pista estándar puedes configurar 400 m; para un circuito distinto introduce su longitud real.
+3. Define las vueltas objetivo o el tiempo de resistencia. Por ejemplo, 5 vueltas de 400 m equivalen a 2 km.
+4. Abre **Control de carrera** e inscribe al menos dos corredores. Asigna un dorsal único dentro de esa competencia.
+5. Inicia el cronómetro. Registra una vuelta cada vez que la persona cruce la línea de control. Puedes pausar y reanudar.
+6. Registra las incidencias justificadas, finaliza la carrera y consulta la clasificación. Descarga PDF/CSV y archiva la competencia.
+
+Una persona puede participar en distintas competencias. No puede inscribirse dos veces en la misma, ni compartir dorsal con otra persona en esa carrera. Solo participan corredores activos.
+
+## Módulos
+
+| Pantalla | Funciones |
+| --- | --- |
+| Dashboard | Totales de corredores, competencias, participaciones y vueltas |
+| Corredores | Registro, búsqueda por nombre/equipo/categoría/dorsal, edición y baja lógica |
+| Competencias | Fecha, reglas, modalidad, distancia por vuelta e inscripciones |
+| Control de carrera | Cronómetro, vueltas, distancias, ritmo, posiciones y parciales |
+| Penalizaciones | Tiempo añadido, retiro, eliminación y descalificación con motivo |
+| Resultados | Clasificación, estadísticas y podio cuando existe ganador oficial |
+| Historial | Consulta por competencia, fecha, persona y estado |
+| Reportes | Resultados PDF y CSV con datos de los corredores |
+| Usuarios | Cuentas, permisos y desactivación de acceso |
+| Auditoría | Responsable, fecha, motivo y evidencia de operaciones críticas |
+| Configuración | Nombre de la organización, sede, temporada y respaldos |
+| Vista pública | Cronómetro y clasificación sin controles de escritura |
+
+## Modalidades y medición
+
+| Modalidad | Condición de victoria |
+| --- | --- |
+| Por vueltas | Completar el objetivo con el menor tiempo ajustado |
+| Contrarreloj | Completar el mismo objetivo y comparar el tiempo ajustado |
+| Resistencia | Más vueltas válidas al terminar el periodo configurado |
+| Eliminación | Ser el último corredor habilitado; las eliminaciones las registra el operador |
+
+El servidor calcula las duraciones a partir de marcas acumuladas y descuenta las pausas. La distancia recorrida es `vueltas válidas × metros por vuelta`. El ritmo mostrado es el tiempo ajustado por kilómetro e incluye las penalizaciones de tiempo.
+
+El orden general considera vueltas válidas, tiempo ajustado y mejor vuelta; los participantes excluidos no reciben posición competitiva. Un empate pendiente con vueltas requiere resolución justificada del administrador antes de oficializar al ganador.
+
+No se capturan tiempos mientras la carrera esté pausada o cerrada. Reiniciar crea otro intento y conserva el anterior. Corregir o anular una vuelta exige administrador y motivo; se recalculan los parciales posteriores y se conserva la evidencia. Reabrir resultados finalizados también requiere autorización y justificación. Las competencias archivadas permanecen cerradas.
+
+La captura es manual: el tiempo corresponde al procesamiento en el servidor y puede verse afectado por la red. Las actualizaciones usan SSE, sincronización periódica y consultas de respaldo si se pierde el canal. Para consultar como espectador abre [la vista pública](http://127.0.0.1:5173/#public).
+
+## Roles
+
+| Rol | Acceso |
+| --- | --- |
+| Administrador | Corredores, competencias, inscripciones, resultados, usuarios, auditoría, configuración y respaldos |
+| Operador | Registro/edición de corredores, cronómetro, vueltas, incidencias, resultados y reportes |
+| Espectador | Consulta de clasificación pública sin cuenta |
+
+Los corredores son participantes, no cuentas de acceso. La organización crea las cuentas de operadores desde **Usuarios**.
+
+## Demostración independiente
+
+```powershell
+npm run demo
+```
+
+Abre [la demostración](http://127.0.0.1:5174):
+
+- Correo: `demo@carrera.local`
+- Contraseña: `CarreraDemo2026`
+
+Incluye cuatro corredores, sus clubes/categorías y tres competencias a pie. Usa una API separada en 3002 y SQLite en memoria. No abre la base real y sus cambios desaparecen al detenerla.
+
+## Comandos
+
+| Comando | Función |
+| --- | --- |
+| `npm install` | Instalar dependencias de ambos workspaces |
+| `npm run dev` | Iniciar frontend y backend |
+| `npm run dev:backend` | Iniciar únicamente la API de desarrollo |
+| `npm run dev:frontend` | Iniciar únicamente la interfaz de desarrollo |
+| `npm run demo` | Demostración temporal |
+| `npm test` | Pruebas de integración con bases temporales |
+| `npm run build` | Comprobar TypeScript y compilar el frontend |
+| `npm start` | Servir la API y el frontend previamente compilado |
+
+Para usar la compilación en un solo servidor:
+
+```powershell
 npm run build
+npm start
 ```
-Las pruebas usan SQLite temporal y en memoria; no modifican la base de uso real. Verifican CRUD, validación, números duplicados, tiempos calculados por servidor, pausa, reinicio, cascada, CORS y persistencia al reabrir el archivo. La compilación verifica TypeScript y genera `frontend/dist`.
 
-Para revisar la compilación local sin desplegarla, mantén backend activo y ejecuta:
-```sh
-npm run preview -w frontend -- --host 127.0.0.1
-```
-El proxy `/api` configurado en Vite también funciona en preview. Abre la URL que indique la terminal (normalmente http://localhost:4173). Para producción, sirve `frontend/dist` mediante un servidor web que reenvíe `/api` al backend. `npm start -w backend` ejecuta la API sin modo watch.
+Abre [la aplicación compilada](http://127.0.0.1:3001).
 
-## Comprobación manual
-1. Registra cuatro pilotos con números diferentes. Intenta repetir un número y verifica el error.
-2. Edita nombre, alias o vehículo y guarda; recarga para comprobar persistencia.
-3. Asigna un piloto a cada estado. Verifica el orden activo → penalizado → ganador → eliminado; cambia un estado y observa el reordenamiento.
-4. Inicia el reloj y pulsa **Registrar Vuelta** en dos tarjetas. Deben aparecer marcas acumuladas de milisegundos con fecha.
-5. Pausa: el tiempo debe permanecer fijo. Reanuda y vuelve a registrar una vuelta.
-6. Reinicia el backend y recarga la página. Pilotos e historial permanecen; el reloj que estaba corriendo continúa contando el tiempo transcurrido.
-7. Reinicia el reloj y confirma: queda a cero y pausado, conservando vueltas previas.
-8. Borra una vuelta con ×. Elimina un piloto con confirmación y comprueba que se actualizan los contadores y desaparece su historial.
-9. Detén backend: el cliente mostrará un error de conexión. Inícialo y pulsa **Reintentar conexión**.
+## Datos, cuentas y respaldos
 
-Las vueltas son marcas acumuladas del reloj global, no duraciones entre vueltas. El POST captura el instante de procesamiento en el servidor; la visualización del navegador es una proyección orientativa entre sincronizaciones. No es una medición física del instante del clic: la red puede introducir latencia.
+La base persistente está en `backend/data/carrera.sqlite`. Utiliza tablas relacionadas para corredores e inscripciones; el modelo de competencia no exige ningún equipo físico. Los dorsales y las inscripciones se protegen con restricciones únicas, claves foráneas y transacciones.
 
-## API rápida
-```sh
-curl http://localhost:3001/api/health
-curl -X POST http://localhost:3001/api/pilotos -H 'Content-Type: application/json' -d '{"nombre":"Ana","alias":"Neon","vehiculo":"Interceptor","numero":7}'
-curl -X POST http://localhost:3001/api/cronometro
-curl -X POST http://localhost:3001/api/pilotos/1/vueltas
-curl http://localhost:3001/api/pilotos/1/vueltas
-curl -X PUT http://localhost:3001/api/cronometro -H 'Content-Type: application/json' -d '{"accion":"pausar"}'
-```
-El ejemplo de vueltas presupone que el piloto creado tiene ID 1; sustituye por el ID real devuelto.
+Las instalaciones anteriores se adaptan automáticamente: se conservan las personas, inscripciones, marcas y resultados, además de sus tablas originales como evidencia. No se inventan distancias históricas: si antes no se configuraban, se muestran sin distancia ni ritmo hasta que las reglas permitan configurarlas. El historial V1 sin identificación de intentos se conserva como evidencia archivada, sin generar duraciones ficticias.
 
-## Variables opcionales del backend
-- `PORT`: 3001 por defecto.
-- `DB_PATH`: ruta al archivo SQLite; por defecto backend/data/carrera.sqlite (independiente de la carpeta desde donde se ejecute).
-- `FRONTEND_ORIGIN`: origen CORS autorizado; por defecto http://localhost:5173.
+Las contraseñas se guardan con bcrypt, coste 12. Las sesiones duran ocho horas, con tokens cuyo hash se almacena en SQLite y cuyo valor se mantiene en `sessionStorage`. Los permisos se comprueban en el servidor. Cerrar sesión, cambiar contraseña o editar permisos revoca sesiones. El inicio de sesión limita intentos repetidos.
 
-Se leen del entorno; no es necesario crear `.env`. Si cambias el puerto de la API, actualiza también el destino del proxy en frontend/vite.config.ts. El frontend usa rutas relativas `/api`.
+Desde **Configuración** puedes descargar un respaldo lógico JSON, formato 3 para carreras a pie, y restaurarlo. Se admiten respaldos anteriores de formato 2 mediante conversión. La restauración valida datos, referencias y tiempos, guarda una copia previa en SQLite, reemplaza la información activa y cierra sesiones. Las carreras que estaban corriendo se restauran pausadas. Los respaldos contienen cuentas y hashes de contraseñas: guárdalos de forma privada. Las copias previas internas se recuperan con herramientas SQLite; no existe un botón para esa recuperación.
+
+## Variables opcionales
+
+Se leen del entorno del proceso. `.env.example` es una referencia y no se carga automáticamente.
+
+| Variable | Valor predeterminado |
+| --- | --- |
+| `HOST` | `127.0.0.1` |
+| `PORT` | `3001` |
+| `DB_PATH` | `backend/data/carrera.sqlite` |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` |
+| `API_PROXY` | `http://127.0.0.1:3001` |
+
+Ejemplo en PowerShell: `$env:PORT='3005'` antes de `npm start`. Si cambias el puerto del backend durante el desarrollo, ajusta también `API_PROXY` para Vite.
 
 ## Estructura
+
 ```text
-DOCUMENTACION.md
-README.md
-package.json                 # workspaces y comandos comunes
-package-lock.json
-index.html                   # original histórico, no es el frontend nuevo
 backend/
-  package.json
-  src/
-    db.js                    # conexión, tablas e índices
-    app.js                   # API, validación y reloj
-    server.js                # arranque y cierre
-  test/api.test.js
-  data/carrera.sqlite        # generado al arrancar, no versionado
-frontend/
-  package.json
-  index.html
-  vite.config.ts
-  tsconfig.json
-  tailwind.config.js
-  postcss.config.js
-  src/
-    main.tsx
-    App.tsx
-    api.ts
-    types.ts
-    Clock.tsx
-    PilotForm.tsx
-    PilotCard.tsx
-    styles.css
+  scripts/demo.mjs          # Personas y competencias ficticias
+  src/app.js               # HTTP, seguridad y frontend compilado
+  src/db.js                # Conexión SQLite
+  src/repository.js        # Persistencia de corredores y competencias
+  src/running-migration.js # Compatibilidad con datos anteriores
+  src/v2.js                # API y reglas de competencia
+  src/server.js            # Arranque del servidor
+  test/v2.test.js          # Pruebas de integración
+frontend/src/              # Pantallas, formularios, clasificación y estilos
+scripts/dev.mjs            # Arranque conjunto
+docs/                      # Documentación y vista previa
 ```
 
-El original se conserva solo para referencia. No existe una migración automática de sus datos LocalStorage. El sistema nuevo guarda todo en SQLite. Las fuentes de Google requieren Internet; hay fuentes de respaldo. Esta versión está pensada para administración local de confianza y no incluye inicio de sesión.
+## Comprobaciones y límites
+
+Ejecuta `npm test` y `npm run build`. Las pruebas cubren autenticación, roles, inscripciones por persona, dorsales, distancias, ritmo, estados, cronómetro, idempotencia, intentos, sanciones, resultados, exportaciones, respaldos y migración. No escriben en la base real.
+
+La interfaz está preparada desde 360 px; las tablas se desplazan dentro de su contenedor. Las metas de carga, disponibilidad, precisión temporal y WCAG AA necesitan validación específica. La publicación en red requiere HTTPS y configuración del servidor. Los respaldos son manuales.

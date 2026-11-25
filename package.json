@@ -6,9 +6,15 @@
     "frontend"
   ],
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "demo": "node scripts/dev.mjs --demo",
+    "start": "node backend/src/server.js",
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend --",
     "build": "npm run build -w frontend",
     "test": "npm test -w backend"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1"
   }
 }

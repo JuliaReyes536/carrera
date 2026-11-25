@@ -1,13 +1,12 @@
-# Documentación funcional — Carrera de la Muerte
+# Documentación de carreras a pie
 
-Esta documentación describe la aplicación autónoma servida desde `../index.html`. Los datos se guardan en `localStorage` del navegador. El modelo relacional documenta la estructura lógica equivalente; la aplicación no requiere un servidor SQL.
+La aplicación gestiona personas que corren: corredores, dorsales, categorías, vueltas, distancias, ritmo y resultados.
 
-## Contenido
-
+- [Instalación y uso](../README.md)
+- [Arquitectura, base de datos y API](../DOCUMENTACION.md)
+- [Alcance y requisitos](REQUIREMENTS.md)
 - [Requisitos funcionales](requisitos-funcionales.md)
 - [Casos de uso](casos-de-uso.md)
 - [Modelo relacional](modelo-relacional.md)
 
-## Persistencia
-
-El navegador guarda pilotos en `cdm_racers`, el estado del cronómetro en `cdm_clock` y las vueltas en `cdm_laps`. El reloj en marcha persiste su instante de inicio, por lo que sigue avanzando aunque se cierre la pestaña. Los datos son locales al navegador y origen; borrar sus datos elimina esta información.
+La instrucción del usuario de utilizar carreras a pie define el dominio de esta versión y prevalece sobre las referencias a otro tipo de participantes en la propuesta original. Los archivos fuente del análisis se conservan como antecedentes.
